@@ -22,13 +22,15 @@ const minLipschitz = 1e-6
 func Desc(f Func, x []float64, test ConvergenceTest) ([]float64, error) {
 	l, err := lowerBoundLipschitz(f, x)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bound Lipschitz constant: %v", err)
 	}
 	if l < minLipschitz {
 		l = minLipschitz
 	}
-	// Lower bound on Lipschitz constant is upper bound on step size.
-	t := 1 / l
+	return DescRate(f, x, test, 1/l)
+}
+
+func DescRate(f Func, x []float64, test ConvergenceTest, t float64) ([]float64, error) {
 	var (
 		p  []float64
 		fp float64
@@ -37,6 +39,12 @@ func Desc(f Func, x []float64, test ConvergenceTest) ([]float64, error) {
 		fx, gx, err := f(x)
 		if err != nil {
 			return nil, err
+		}
+		if math.IsNaN(fx) {
+			return nil, fmt.Errorf("function evaluates to NaN")
+		}
+		if floats.HasNaN(gx) {
+			return nil, fmt.Errorf("gradient evaluates to NaN")
 		}
 		if k > 0 {
 			fmt.Fprintf(
@@ -60,6 +68,9 @@ func Desc(f Func, x []float64, test ConvergenceTest) ([]float64, error) {
 			fz, _, err := f(z)
 			if err != nil {
 				return nil, err
+			}
+			if math.IsNaN(fz) {
+				return nil, fmt.Errorf("backtrack: function evaluates to NaN")
 			}
 			// Need to ensure that t satisfies
 			//   fx-fz >= 0.5*t*floats.Dot(gx, gx).
@@ -93,6 +104,9 @@ func lowerBoundLipschitz(f Func, x []float64) (float64, error) {
 	_, gx, err := f(x)
 	if err != nil {
 		return 0, err
+	}
+	if floats.HasNaN(gx) {
+		return 0, fmt.Errorf("gradient evaluates to NaN")
 	}
 	y := make([]float64, len(x))
 	randVec(y)
