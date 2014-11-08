@@ -29,14 +29,15 @@ func Split(x interface{}, minNum, maxSize int) (interface{}, [][]int) {
 	return y.Interface(), inds
 }
 
-//	// SplitTo calls Split.
-//	// If x has type []X, then dst must have type *[][]X and be non-nil.
-//	func SplitTo(dst, x interface{}, minNum, maxSize int) [][]int {
-//		y, inds := Split(x, minNum, maxSize)
-//		// De-reference dst pointer.
-//		reflect.ValueOf(dst).Elem().Set(reflect.ValueOf(y))
-//		return inds
-//	}
+// SplitTo calls Split.
+// It allocates a new list.
+// If x has type []X, then dst must have type *[][]X and be non-nil.
+func SplitTo(dst, x interface{}, minNum, maxSize int) [][]int {
+	y, inds := Split(x, minNum, maxSize)
+	// De-reference dst pointer.
+	reflect.ValueOf(dst).Elem().Set(reflect.ValueOf(y))
+	return inds
+}
 
 // Takes a slice [][]X and returns a slice []X.
 func Merge(x interface{}) interface{} {
